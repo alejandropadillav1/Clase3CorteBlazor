@@ -1,0 +1,29 @@
+﻿@page "/pagina1clase"
+
+<h3>Alejandro Padilla Valderrama</h3>
+
+<MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="OnButtonClicked" >Delete</MudButton>
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnGenerarAlerta">Generar Notificacion</MudButton>
+
+@code {
+    [Inject] private IDialogService DialogService { get; set; }
+    [Inject] private ISnackbar SnackBarService { get; set; }
+
+
+    string state = "Message box hasn't been opened yet";
+    private async void OnButtonClicked()
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Clase Programacion Nuevas tecnologias", 
+            "Si quieres borrar, estarás fregado", 
+            yesText:"Borre!", cancelText:"No borre");
+        state= result==null ? "No borre" : "Borre!";
+        StateHasChanged();
+    }
+
+
+    private async void OnGenerarAlerta()
+    {
+        SnackBarService.Add("No seas estúpido", Severity.Error);
+    }
+}
