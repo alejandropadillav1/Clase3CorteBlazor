@@ -1,28 +1,23 @@
 ﻿@page "/pagina2"
 
+@inject HttpClient _client;
+
 @using System.Net.Http.Json
 @using Clase3CorteBlazor.Data
 
 <MudButton OnClick="(args) => AgregarNuevoRegistro()" Variant="Variant.Filled" Color="Color.Primary">Añadir</MudButton>
 
-<MudDataGrid T="Element" Items="@Elements" ReadOnly="@_readOnly" EditMode="@(_isCellEditMode ? DataGridEditMode.Cell : DataGridEditMode.Form)"
+<MudDataGrid T="Libro" Items="@Libros" ReadOnly="@_readOnly" EditMode="@(_isCellEditMode ? DataGridEditMode.Cell : DataGridEditMode.Form)"
     StartedEditingItem="@StartedEditingItem" CancelledEditingItem="@CancelledEditingItem" CommittedItemChanges="@CommittedItemChanges"
     Bordered="true" Dense="true" EditTrigger="@(_editTriggerRowClick ? DataGridEditTrigger.OnRowClick : DataGridEditTrigger.Manual)">
     <Columns>
-        <Column T="Element" Field="Number" Title="Nr" IsEditable="false" />
-        <Column T="Element" Field="Sign" />
-        <Column T="Element" Field="Name" />
-        <Column T="Element" Field="Position">
-            <EditTemplate>
-                <MudSelect @bind-Value="context.Item.Position" Required RequiredError="You must select a Position!!!" Margin="@Margin.Dense">
-                    <MudSelectItem Value="0">zero</MudSelectItem>
-                    <MudSelectItem Value="1">one</MudSelectItem>
-                    <MudSelectItem Value="17">seventeen</MudSelectItem>
-                </MudSelect>
-            </EditTemplate>
-        </Column>
-        <Column T="Element" Field="Molar" Title="Molar mass" />
-        <Column T="Element" Hidden="@(_isCellEditMode || _readOnly || _editTriggerRowClick)" CellClass="d-flex justify-end">
+        <Column T="Libro" Field="idlibro" Title="Id" IsEditable="false" />
+        <Column T="Libro" Field="titulo" />
+        <Column T="Libro" Field="editorial" />
+        <Column T="Libro" Field="autor" />
+        <Column T="Libro" Field="pagina" Title="Pagina" />
+        <Column T="Libro" Field="descripcion" Title="Descripcion" />
+        <Column T="Libro" Hidden="@(_isCellEditMode || _readOnly || _editTriggerRowClick)" CellClass="d-flex justify-end">
             <CellTemplate>
                 <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Edit" OnClick="@context.Actions.StartEditingItem" />
                  <MudIconButton Size="@Size.Small" Icon="@Icons.Outlined.Delete" OnClick="(args)=> EliminarEvento(context.Item)" />
@@ -34,7 +29,7 @@
 
 
 @code {
-    private IEnumerable<Element> Elements = new List<Element>();
+    private IEnumerable<Libro> Libros = new List<Libro>();
     private bool _readOnly;
     private bool _isCellEditMode;
     private List<string> _events = new();
@@ -42,56 +37,50 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var elemento = new List<Element>();
-        elemento.Add(new Element
-            {
-                Name = "Alejandro",
-                Group = "Grupo 1",
-                Number = 15,
-                Position = 1,
-                Sign = "No sé"
-            });
+        var elemento = new List<Libro>();
+        _client.BaseAddress = new Uri("https://localhost:7174/");
 
-        elemento.Add(new Element
-            {
-                Name = "Padilla",
-                Group = "Grupo 2",
-                Number = 18,
-                Position = 2,
-                Sign = "No sé de que hablas"
-            });
+        var requestMessage = new HttpRequestMessage(HttpMethod.Get, "Biblioteca/ConsultaLibros");
+        var respuesta = await _client.SendAsync(requestMessage);
 
-        Elements = elemento;
+        if(respuesta.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            var responseBody = await respuesta.Content.ReadAsStringAsync();
+            var listasLibro = System.Text.Json.JsonSerializer.Deserialize<List<Libro>>(responseBody);
+            Libros = listasLibro;
+        }
+
+
     }
 
-    void EliminarEvento(Element item)
+    void EliminarEvento(Libro item)
     {
 
     }
 
     void AgregarNuevoRegistro()
     {
-        var elemento = new Element
+        var elemento = new Libro
             {
-                Group = "Loco",
-                Name = "Alejandro P"
-
+                autor = "Autor Nuevo",
+                titulo = "Alejandro P",
+                descripcion = "Descripcion"
             };
-        ((List<Element>)Elements).Add(elemento);
+        ((List<Libro>)Libros).Add(elemento);
         StateHasChanged();
     }
     // events
-    void StartedEditingItem(Element item)
+    void StartedEditingItem(Libro item)
     {
         _events.Insert(0, $"Event = StartedEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(item)}");
     }
 
-    void CancelledEditingItem(Element item)
+    void CancelledEditingItem(Libro item)
     {
         _events.Insert(0, $"Event = CancelledEditingItem, Data = {System.Text.Json.JsonSerializer.Serialize(item)}");
     }
     //Este servirá para guardar o actualizar registros.
-    void CommittedItemChanges(Element item)
+    void CommittedItemChanges(Libro item)
     {
         _events.Insert(0, $"Event = CommittedItemChanges, Data = {System.Text.Json.JsonSerializer.Serialize(item)}");
     }
